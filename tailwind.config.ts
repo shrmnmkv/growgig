@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,20 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// GrowGig Green Theme Colors
+				growgig: {
+					50: '#f0fdf4',
+					100: '#dcfce7',
+					200: '#bbf7d0',
+					300: '#86efac',
+					400: '#4ade80',
+					500: '#10b981', // primary
+					600: '#059669', // secondary
+					700: '#047857',
+					800: '#065f46',
+					900: '#064e3b',
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
