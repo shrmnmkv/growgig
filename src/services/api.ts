@@ -305,6 +305,92 @@ const mockFreelancers: Freelancer[] = [
 // Mock applications data
 const mockApplications: Application[] = [];
 
+// Pagination helper function
+const paginateResults = <T>(items: T[], page: number = 1, itemsPerPage: number = 6) => {
+  const startIndex = (page - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedItems = items.slice(startIndex, endIndex);
+  
+  return {
+    data: paginatedItems,
+    total: items.length,
+    totalPages: Math.ceil(items.length / itemsPerPage),
+    currentPage: page,
+    itemsPerPage
+  };
+};
+
+// Filter helper function for freelancers
+const filterFreelancers = (
+  freelancers: Freelancer[],
+  filters: {
+    search?: string;
+    location?: string;
+    skills?: string[];
+    minExperience?: number;
+    maxExperience?: number;
+    minRate?: number;
+    maxRate?: number;
+  }
+) => {
+  return freelancers.filter(freelancer => {
+    // Search filter (name, title, or skills)
+    if (filters.search && filters.search.trim() !== '') {
+      const searchLower = filters.search.toLowerCase();
+      const nameMatch = freelancer.name.toLowerCase().includes(searchLower);
+      const titleMatch = freelancer.title.toLowerCase().includes(searchLower);
+      const skillsMatch = freelancer.skills.some(skill => 
+        skill.toLowerCase().includes(searchLower)
+      );
+      
+      if (!(nameMatch || titleMatch || skillsMatch)) {
+        return false;
+      }
+    }
+    
+    // Location filter
+    if (filters.location && filters.location.trim() !== '') {
+      if (!freelancer.location.toLowerCase().includes(filters.location.toLowerCase())) {
+        return false;
+      }
+    }
+    
+    // Skills filter
+    if (filters.skills && filters.skills.length > 0) {
+      const hasAllSkills = filters.skills.every(skill => 
+        freelancer.skills.includes(skill)
+      );
+      if (!hasAllSkills) {
+        return false;
+      }
+    }
+    
+    // Experience range filter
+    if (filters.minExperience !== undefined && 
+        freelancer.yearsOfExperience < filters.minExperience) {
+      return false;
+    }
+    
+    if (filters.maxExperience !== undefined && 
+        freelancer.yearsOfExperience > filters.maxExperience) {
+      return false;
+    }
+    
+    // Hourly rate range filter
+    if (filters.minRate !== undefined && 
+        freelancer.hourlyRate < filters.minRate) {
+      return false;
+    }
+    
+    if (filters.maxRate !== undefined && 
+        freelancer.hourlyRate > filters.maxRate) {
+      return false;
+    }
+    
+    return true;
+  });
+};
+
 // Simulate API endpoints
 export const api = {
   // Jobs
@@ -333,9 +419,32 @@ export const api = {
   },
   
   // Freelancers
-  getFreelancers: async (): Promise<Freelancer[]> => {
+  getFreelancers: async (params?: {
+    search?: string;
+    location?: string;
+    skills?: string[];
+    minExperience?: number;
+    maxExperience?: number;
+    minRate?: number;
+    maxRate?: number;
+    page?: number;
+    itemsPerPage?: number;
+  }) => {
     await new Promise(resolve => setTimeout(resolve, 500));
-    return [...mockFreelancers];
+    
+    // Apply filters if provided
+    let filteredFreelancers = [...mockFreelancers];
+    
+    if (params) {
+      filteredFreelancers = filterFreelancers(filteredFreelancers, params);
+    }
+    
+    // Apply pagination
+    return paginateResults(
+      filteredFreelancers, 
+      params?.page || 1, 
+      params?.itemsPerPage || 6
+    );
   },
   
   getFreelancerById: async (id: string): Promise<Freelancer | undefined> => {

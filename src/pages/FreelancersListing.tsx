@@ -31,6 +31,14 @@ import {
   X
 } from 'lucide-react';
 
+interface FreelancersPaginatedResponse {
+  data: Freelancer[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  itemsPerPage: number;
+}
+
 const FreelancersListing = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
@@ -40,7 +48,7 @@ const FreelancersListing = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   
-  const { data: freelancers, isLoading, error } = useQuery({
+  const { data: freelancersResponse, isLoading, error } = useQuery<FreelancersPaginatedResponse>({
     queryKey: ['freelancers', searchQuery, location, selectedSkills, experienceRange, rateRange, currentPage],
     queryFn: () => api.getFreelancers({
       search: searchQuery,
@@ -54,7 +62,7 @@ const FreelancersListing = () => {
     })
   });
   
-  const totalPages = freelancers?.totalPages || 1;
+  const totalPages = freelancersResponse?.totalPages || 1;
   
   const commonSkills = [
     'React', 'Node.js', 'JavaScript', 'TypeScript', 'UI/UX Design', 
@@ -238,11 +246,11 @@ const FreelancersListing = () => {
           </div>
         ) : (
           <>
-            {freelancers && freelancers.data.length > 0 ? (
+            {freelancersResponse && freelancersResponse.data.length > 0 ? (
               <>
                 <div className="mb-6 flex justify-between items-center">
                   <p className="text-gray-600">
-                    Showing {freelancers.data.length} of {freelancers.total} freelancers
+                    Showing {freelancersResponse.data.length} of {freelancersResponse.total} freelancers
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">Sort by:</span>
@@ -256,7 +264,7 @@ const FreelancersListing = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                  {freelancers.data.map((freelancer: Freelancer) => (
+                  {freelancersResponse.data.map((freelancer: Freelancer) => (
                     <FreelancerCard key={freelancer.id} freelancer={freelancer} />
                   ))}
                 </div>
