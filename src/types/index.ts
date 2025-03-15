@@ -58,3 +58,54 @@ export interface Application {
   status?: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
 }
+
+// User related types
+export interface User {
+  id: string;
+  email: string;
+  password: string; // This would not be returned from a real API
+  name: string;
+  role: 'freelancer' | 'employer';
+  companyName?: string; // For employers
+  freelancerId?: string; // For freelancers
+  createdAt: string;
+}
+
+// Authentication types
+export interface AuthResponse {
+  user: Omit<User, 'password'>;
+  token: string;
+}
+
+// Dashboard data types
+export interface FreelancerDashboardData {
+  applications: Application[];
+  profile: Freelancer | undefined;
+  stats: {
+    appliedJobs: number;
+    pendingApplications: number;
+    acceptedApplications: number;
+    rejectedApplications: number;
+  };
+}
+
+export interface EmployerDashboardData {
+  postedJobs: Job[];
+  applications: Application[];
+  stats: {
+    totalJobs: number;
+    totalApplications: number;
+    pendingApplications: number;
+    acceptedApplications: number;
+  };
+}
+
+// Pagination response type
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  itemsPerPage: number;
+}
+

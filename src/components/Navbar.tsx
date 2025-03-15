@@ -1,18 +1,33 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   Phone, 
   Globe, 
   Menu, 
-  X 
+  X,
+  User,
+  LogOut,
+  Briefcase,
+  ChevronDown
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(prev => !prev);
@@ -20,6 +35,11 @@ const Navbar = () => {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  };
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
@@ -50,9 +70,11 @@ const Navbar = () => {
               <Link to="/freelancers" className="text-gray-700 hover:text-growgig-600 font-medium">
                 Find Candidates
               </Link>
-              <Link to="/employers" className="text-gray-700 hover:text-growgig-600 font-medium">
-                For Employers
-              </Link>
+              {isAuthenticated && user?.role === 'employer' && (
+                <Link to="/post-job" className="text-gray-700 hover:text-growgig-600 font-medium">
+                  Post a Job
+                </Link>
+              )}
             </div>
           )}
 
@@ -62,21 +84,47 @@ const Navbar = () => {
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <div className="flex items-center">
                   <Phone size={16} className="mr-2 text-growgig-500" />
-                  <span>(555) 123-4567</span>
+                  <span>+91 98765 43210</span>
                 </div>
                 <div className="flex items-center">
                   <Globe size={16} className="mr-2 text-growgig-500" />
                   <span>EN</span>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm">
-                  Log In
-                </Button>
-                <Button className="bg-growgig-500 hover:bg-growgig-600" size="sm">
-                  Sign Up
-                </Button>
-              </div>
+              
+              {isAuthenticated ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <User size={16} />
+                      {user?.name?.split(' ')[0]}
+                      <ChevronDown size={14} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                      <Briefcase className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Button as={Link} to="/login" variant="outline" size="sm">
+                    Log In
+                  </Button>
+                  <Button as={Link} to="/register" className="bg-growgig-500 hover:bg-growgig-600" size="sm">
+                    Sign Up
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -106,18 +154,42 @@ const Navbar = () => {
               >
                 Find Candidates
               </Link>
-              <Link 
-                to="/employers" 
-                className="text-gray-700 hover:text-growgig-600 font-medium py-2"
-                onClick={closeMenu}
-              >
-                For Employers
-              </Link>
+              
+              {isAuthenticated && user?.role === 'employer' && (
+                <Link 
+                  to="/post-job" 
+                  className="text-gray-700 hover:text-growgig-600 font-medium py-2"
+                  onClick={closeMenu}
+                >
+                  Post a Job
+                </Link>
+              )}
+              
+              {isAuthenticated && (
+                <>
+                  <Link 
+                    to="/dashboard" 
+                    className="text-gray-700 hover:text-growgig-600 font-medium py-2"
+                    onClick={closeMenu}
+                  >
+                    Dashboard
+                  </Link>
+                  <button 
+                    onClick={() => {
+                      handleLogout();
+                      closeMenu();
+                    }}
+                    className="text-left text-gray-700 hover:text-growgig-600 font-medium py-2"
+                  >
+                    Log Out
+                  </button>
+                </>
+              )}
               
               <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                 <div className="flex items-center">
                   <Phone size={16} className="mr-2 text-growgig-500" />
-                  <span className="text-sm">(555) 123-4567</span>
+                  <span className="text-sm">+91 98765 43210</span>
                 </div>
                 <div className="flex items-center">
                   <Globe size={16} className="mr-2 text-growgig-500" />
@@ -125,14 +197,16 @@ const Navbar = () => {
                 </div>
               </div>
               
-              <div className="flex space-x-2 pt-4">
-                <Button variant="outline" size="sm" className="flex-1">
-                  Log In
-                </Button>
-                <Button className="bg-growgig-500 hover:bg-growgig-600 flex-1" size="sm">
-                  Sign Up
-                </Button>
-              </div>
+              {!isAuthenticated && (
+                <div className="flex space-x-2 pt-4">
+                  <Button as={Link} to="/login" variant="outline" size="sm" className="flex-1" onClick={closeMenu}>
+                    Log In
+                  </Button>
+                  <Button as={Link} to="/register" className="bg-growgig-500 hover:bg-growgig-600 flex-1" size="sm" onClick={closeMenu}>
+                    Sign Up
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -142,3 +216,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
