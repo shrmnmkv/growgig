@@ -1,4 +1,3 @@
-
 // Mock data and API service to simulate backend functionality
 // Later this will be replaced with real API calls
 
@@ -434,7 +433,7 @@ const filterFreelancers = (
 // Simulate API endpoints
 export const api = {
   // Authentication
-  login: async (email: string, password: string): Promise<{ user: Omit<User, 'password'>, token: string } | null> => {
+  login: async (email: string, pass: string): Promise<{ user: Omit<User, 'password'>, token: string } | null> => {
     await new Promise(resolve => setTimeout(resolve, 700));
     
     const user = mockUsers.find(u => u.email === email);
@@ -502,7 +501,7 @@ export const api = {
     
     mockUsers.push(newUser);
     
-    const { password, ...userWithoutPassword } = newUser;
+    const { password: pwd, ...userWithoutPassword } = newUser;
     
     return {
       user: userWithoutPassword,
@@ -613,7 +612,7 @@ export const api = {
     }
   },
   
-  createApplication: async (application: Omit<Application, 'id' | 'createdAt' | 'status'>): Promise<Application> => {
+  createApplication: async (application: Omit<Application, 'id' | 'createdAt'>): Promise<Application> => {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     const newApplication: Application = {
@@ -687,4 +686,3 @@ export const api = {
     };
   }
 };
-

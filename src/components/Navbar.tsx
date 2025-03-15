@@ -1,219 +1,218 @@
 
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { 
-  Phone, 
-  Globe, 
-  Menu, 
-  X,
-  User,
-  LogOut,
-  Briefcase,
-  ChevronDown
-} from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useAuth } from '@/contexts/AuthContext';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
+import { Menu, Phone, Globe, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import ButtonLink from './ButtonLink';
 
 const Navbar = () => {
-  const isMobile = useIsMobile();
-  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
 
-  const toggleMenu = () => {
-    setIsMenuOpen(prev => !prev);
-  };
-
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-  };
-  
   const handleLogout = () => {
     logout();
-    navigate('/');
+    setIsMobileMenuOpen(false);
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2" onClick={closeMenu}>
-            <span className="text-2xl font-bold text-growgig-500">GrowGig</span>
-          </Link>
-
-          {/* Mobile menu button */}
-          {isMobile && (
-            <button onClick={toggleMenu} className="md:hidden p-2">
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          )}
-
-          {/* Desktop Navigation */}
-          {!isMobile && (
-            <div className="hidden md:flex space-x-6 items-center">
-              <Link to="/" className="text-gray-700 hover:text-growgig-600 font-medium">
-                Home
-              </Link>
-              <Link to="/jobs" className="text-gray-700 hover:text-growgig-600 font-medium">
-                Find Projects
-              </Link>
-              <Link to="/freelancers" className="text-gray-700 hover:text-growgig-600 font-medium">
-                Find Candidates
-              </Link>
-              {isAuthenticated && user?.role === 'employer' && (
-                <Link to="/post-job" className="text-gray-700 hover:text-growgig-600 font-medium">
-                  Post a Job
-                </Link>
-              )}
+    <header className="sticky top-0 z-50 bg-white shadow-sm">
+      {/* Top bar with contact info */}
+      <div className="hidden md:block bg-gray-100 py-2">
+        <div className="container mx-auto px-4 flex justify-between items-center">
+          <div className="flex items-center space-x-6 text-sm text-gray-600">
+            <div className="flex items-center">
+              <Phone size={14} className="mr-2" />
+              <span>+91 98765 43210</span>
             </div>
-          )}
-
-          {/* Contact Info & Auth - Desktop */}
-          {!isMobile && (
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
-                <div className="flex items-center">
-                  <Phone size={16} className="mr-2 text-growgig-500" />
-                  <span>+91 98765 43210</span>
-                </div>
-                <div className="flex items-center">
-                  <Globe size={16} className="mr-2 text-growgig-500" />
-                  <span>EN</span>
-                </div>
-              </div>
-              
-              {isAuthenticated ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <User size={16} />
-                      {user?.name?.split(' ')[0]}
-                      <ChevronDown size={14} />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/dashboard')}>
-                      <Briefcase className="mr-2 h-4 w-4" />
-                      <span>Dashboard</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <Button as={Link} to="/login" variant="outline" size="sm">
-                    Log In
-                  </Button>
-                  <Button as={Link} to="/register" className="bg-growgig-500 hover:bg-growgig-600" size="sm">
-                    Sign Up
-                  </Button>
-                </div>
-              )}
+            <div className="flex items-center">
+              <Globe size={14} className="mr-2" />
+              <span>English</span>
+            </div>
+          </div>
+          {isAuthenticated && (
+            <div className="text-sm text-gray-600">
+              Welcome, <span className="font-medium">{user?.name}</span>
             </div>
           )}
         </div>
-
-        {/* Mobile Navigation */}
-        {isMobile && isMenuOpen && (
-          <div className="md:hidden mt-4 pt-4 border-t border-gray-200">
-            <div className="flex flex-col space-y-4">
-              <Link 
-                to="/" 
-                className="text-gray-700 hover:text-growgig-600 font-medium py-2"
-                onClick={closeMenu}
-              >
-                Home
-              </Link>
-              <Link 
-                to="/jobs" 
-                className="text-gray-700 hover:text-growgig-600 font-medium py-2"
-                onClick={closeMenu}
-              >
-                Find Projects
-              </Link>
-              <Link 
-                to="/freelancers" 
-                className="text-gray-700 hover:text-growgig-600 font-medium py-2"
-                onClick={closeMenu}
-              >
-                Find Candidates
-              </Link>
-              
-              {isAuthenticated && user?.role === 'employer' && (
-                <Link 
-                  to="/post-job" 
-                  className="text-gray-700 hover:text-growgig-600 font-medium py-2"
-                  onClick={closeMenu}
-                >
-                  Post a Job
-                </Link>
-              )}
-              
-              {isAuthenticated && (
-                <>
-                  <Link 
-                    to="/dashboard" 
-                    className="text-gray-700 hover:text-growgig-600 font-medium py-2"
-                    onClick={closeMenu}
-                  >
-                    Dashboard
-                  </Link>
-                  <button 
-                    onClick={() => {
-                      handleLogout();
-                      closeMenu();
-                    }}
-                    className="text-left text-gray-700 hover:text-growgig-600 font-medium py-2"
-                  >
-                    Log Out
-                  </button>
-                </>
-              )}
-              
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                <div className="flex items-center">
-                  <Phone size={16} className="mr-2 text-growgig-500" />
-                  <span className="text-sm">+91 98765 43210</span>
-                </div>
-                <div className="flex items-center">
-                  <Globe size={16} className="mr-2 text-growgig-500" />
-                  <span className="text-sm">EN</span>
-                </div>
-              </div>
-              
-              {!isAuthenticated && (
-                <div className="flex space-x-2 pt-4">
-                  <Button as={Link} to="/login" variant="outline" size="sm" className="flex-1" onClick={closeMenu}>
-                    Log In
-                  </Button>
-                  <Button as={Link} to="/register" className="bg-growgig-500 hover:bg-growgig-600 flex-1" size="sm" onClick={closeMenu}>
-                    Sign Up
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
-    </nav>
+
+      {/* Main navbar */}
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center">
+            <span className="text-2xl font-bold text-growgig-600">GrowGig</span>
+          </Link>
+
+          {/* Desktop navigation */}
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link to="/" className="text-gray-700 hover:text-growgig-600 font-medium">
+              Home
+            </Link>
+            <Link to="/jobs" className="text-gray-700 hover:text-growgig-600 font-medium">
+              Find Projects
+            </Link>
+            <Link to="/freelancers" className="text-gray-700 hover:text-growgig-600 font-medium">
+              Find Candidates
+            </Link>
+            {isAuthenticated && user?.role === 'employer' && (
+              <Link to="/post-job" className="text-gray-700 hover:text-growgig-600 font-medium">
+                Post a Project
+              </Link>
+            )}
+          </nav>
+
+          {/* Authentication buttons - desktop */}
+          <div className="hidden md:flex items-center space-x-2">
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="font-medium">
+                    <User size={16} className="mr-2" />
+                    My Account
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard" className="cursor-pointer">Dashboard</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500">
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <ButtonLink to="/login" variant="outline" size="sm">
+                  Login
+                </ButtonLink>
+                <ButtonLink to="/register" className="bg-growgig-500 text-white hover:bg-growgig-600" size="sm">
+                  Register
+                </ButtonLink>
+              </>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon">
+                <Menu />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[350px]">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-2xl font-bold text-growgig-600">GrowGig</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col space-y-4">
+                <Link
+                  to="/"
+                  className="px-2 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Home
+                </Link>
+                <Link
+                  to="/jobs"
+                  className="px-2 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Find Projects
+                </Link>
+                <Link
+                  to="/freelancers"
+                  className="px-2 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Find Candidates
+                </Link>
+                {isAuthenticated && user?.role === 'employer' && (
+                  <Link
+                    to="/post-job"
+                    className="px-2 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Post a Project
+                  </Link>
+                )}
+
+                <div className="pt-4 border-t border-gray-200">
+                  {isAuthenticated ? (
+                    <>
+                      <Link
+                        to="/dashboard"
+                        className="px-2 py-3 text-gray-700 hover:bg-gray-100 rounded-md flex items-center"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <User size={16} className="mr-2" />
+                        Dashboard
+                      </Link>
+                      <ButtonLink 
+                        to="/" 
+                        className="w-full mt-2 text-red-500 justify-center" 
+                        variant="outline"
+                        onClick={handleLogout}
+                      >
+                        Logout
+                      </ButtonLink>
+                    </>
+                  ) : (
+                    <div className="flex flex-col space-y-2">
+                      <ButtonLink 
+                        to="/login" 
+                        className="w-full justify-center" 
+                        variant="outline"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Login
+                      </ButtonLink>
+                      <ButtonLink
+                        to="/register"
+                        className="w-full bg-growgig-500 text-white justify-center hover:bg-growgig-600"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Register
+                      </ButtonLink>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="flex flex-col space-y-3 text-sm text-gray-600">
+                    <div className="flex items-center px-2">
+                      <Phone size={14} className="mr-2" />
+                      <span>+91 98765 43210</span>
+                    </div>
+                    <div className="flex items-center px-2">
+                      <Globe size={14} className="mr-2" />
+                      <span>English</span>
+                    </div>
+                  </div>
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </header>
   );
 };
 
 export default Navbar;
-

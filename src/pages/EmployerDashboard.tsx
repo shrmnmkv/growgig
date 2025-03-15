@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, Navigate } from 'react-router-dom';
@@ -10,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import ButtonLink from '@/components/ButtonLink';
 import {
   CircleCheckBig,
   Clock,
@@ -26,7 +26,6 @@ import { Job, Application } from '@/types';
 const EmployerDashboard = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   
-  // Redirect if not authenticated or not an employer
   if (!authLoading && (!isAuthenticated || user?.role !== 'employer')) {
     return <Navigate to="/login" />;
   }
@@ -65,12 +64,11 @@ const EmployerDashboard = () => {
               <h1 className="text-3xl font-bold text-gray-900">Employer Dashboard</h1>
               <p className="text-gray-600">Welcome back, {user?.name} • {user?.companyName}</p>
             </div>
-            <Button as={Link} to="/post-job" className="bg-growgig-500 hover:bg-growgig-600">
+            <ButtonLink to="/post-job" className="bg-growgig-500 hover:bg-growgig-600 text-white">
               <Plus size={16} className="mr-2" /> Post New Job
-            </Button>
+            </ButtonLink>
           </div>
           
-          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardContent className="p-6 flex flex-col items-center justify-center h-full">
@@ -163,9 +161,9 @@ const EmployerDashboard = () => {
                       <Briefcase size={40} className="text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-1">No jobs posted yet</h3>
                       <p className="text-gray-500 mb-4">Post your first job to start finding talent!</p>
-                      <Button as={Link} to="/post-job" className="bg-growgig-500 hover:bg-growgig-600">
+                      <ButtonLink to="/post-job" className="bg-growgig-500 hover:bg-growgig-600 text-white">
                         Post a Job
-                      </Button>
+                      </ButtonLink>
                     </div>
                   )}
                 </CardContent>
@@ -182,7 +180,6 @@ const EmployerDashboard = () => {
                   {dashboardData?.applications && dashboardData.applications.length > 0 ? (
                     <div className="space-y-4">
                       {dashboardData.applications.map((application: Application) => {
-                        // Find the job for this application
                         const job = dashboardData.postedJobs.find(j => j.id === application.jobId);
                         
                         return (
@@ -226,9 +223,9 @@ const EmployerDashboard = () => {
                       <FileText size={40} className="text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-1">No applications yet</h3>
                       <p className="text-gray-500 mb-4">You haven't received any applications yet.</p>
-                      <Button as={Link} to="/freelancers" className="bg-growgig-500 hover:bg-growgig-600">
+                      <ButtonLink to="/freelancers" className="bg-growgig-500 hover:bg-growgig-600 text-white">
                         Browse Freelancers
-                      </Button>
+                      </ButtonLink>
                     </div>
                   )}
                 </CardContent>
@@ -243,7 +240,6 @@ const EmployerDashboard = () => {
   );
 };
 
-// Helper component for application status badge
 const ApplicationStatusBadge = ({ status }: { status: 'pending' | 'accepted' | 'rejected' }) => {
   switch (status) {
     case 'accepted':
