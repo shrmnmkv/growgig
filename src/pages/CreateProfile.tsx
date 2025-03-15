@@ -73,7 +73,7 @@ const CreateProfile = () => {
         bio: data.bio,
         yearsOfExperience: data.yearsOfExperience,
         hourlyRate: data.hourlyRate,
-        skills: data.skills,
+        skills: data.skills, // This is already transformed to an array by zod
         portfolio: [],
         education: [],
         contact: {

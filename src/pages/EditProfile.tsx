@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -74,7 +75,7 @@ const EditProfile = () => {
         bio: profile.bio,
         yearsOfExperience: profile.yearsOfExperience,
         hourlyRate: profile.hourlyRate,
-        skills: profile.skills.join(', '),
+        skills: profile.skills.join(', '), // Convert array to comma-separated string for the form
         phone: profile.contact.phone.replace('+91 ', ''),
         linkedin: profile.contact.linkedin,
       });
@@ -94,7 +95,7 @@ const EditProfile = () => {
         bio: data.bio,
         yearsOfExperience: data.yearsOfExperience,
         hourlyRate: data.hourlyRate,
-        skills: data.skills,
+        skills: data.skills, // This is already transformed to an array by zod
         contact: {
           email: user.email,
           phone: `+91 ${data.phone}`,
