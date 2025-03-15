@@ -216,7 +216,7 @@ const FreelancerDashboard = () => {
                       </div>
                       
                       <div className="text-center mt-8">
-                        <ButtonLink className="bg-growgig-500 hover:bg-growgig-600">
+                        <ButtonLink to="/edit-profile" className="bg-growgig-500 hover:bg-growgig-600">
                           Edit Profile
                         </ButtonLink>
                       </div>
@@ -226,7 +226,7 @@ const FreelancerDashboard = () => {
                       <UserCircle size={40} className="text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-1">Profile not found</h3>
                       <p className="text-gray-500 mb-4">Complete your profile to increase visibility to employers.</p>
-                      <ButtonLink className="bg-growgig-500 hover:bg-growgig-600">
+                      <ButtonLink to="/create-profile" className="bg-growgig-500 hover:bg-growgig-600">
                         Create Profile
                       </ButtonLink>
                     </div>
@@ -268,3 +268,4 @@ const ApplicationStatusBadge = ({ status }: { status: 'pending' | 'accepted' | '
 };
 
 export default FreelancerDashboard;
+
