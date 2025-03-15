@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -54,7 +53,7 @@ const JobApplication = () => {
     resolver: zodResolver(applicationSchema),
     defaultValues: {
       coverLetter: '',
-      resumeUrl: 'resume_placeholder.pdf', // In a real app, we'd allow uploading a resume
+      resumeUrl: 'resume_placeholder.pdf',
     },
   });
 
@@ -128,12 +127,40 @@ const JobApplication = () => {
             <CardHeader>
               <CardTitle>Apply for Position</CardTitle>
               <CardDescription>
-                You are applying for: <span className="font-semibold">{job.title}</span> at{' '}
-                <span className="font-semibold">{job.company}</span>
+                You are applying for: <span className="font-semibold">{job?.title}</span> at{' '}
+                <span className="font-semibold">{job?.company}</span>
               </CardDescription>
             </CardHeader>
 
             <CardContent>
+              <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="24" 
+                    height="24" 
+                    viewBox="0 0 24 24" 
+                    fill="none"
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    className="text-green-600 mr-3 mt-0.5 flex-shrink-0"
+                  >
+                    <rect width="20" height="14" x="2" y="5" rx="2" />
+                    <path d="M2 10h20" />
+                    <path d="M6 15h4" />
+                    <path d="M14 15h4" />
+                  </svg>
+                  <div>
+                    <h3 className="font-medium text-green-800 mb-1">Escrow Payment Protected</h3>
+                    <p className="text-sm text-green-700">
+                      Payment for this project will be held in escrow. Funds will only be released once you complete the work and the employer approves it.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="space-y-4">
@@ -204,7 +231,7 @@ const JobApplication = () => {
             </CardContent>
 
             <CardFooter className="bg-gray-50 border-t text-sm text-gray-600 py-4">
-              By applying, you agree to our terms and conditions for job applications.
+              By applying, you agree to our terms and conditions for job applications and escrow payment service.
             </CardFooter>
           </Card>
         </div>

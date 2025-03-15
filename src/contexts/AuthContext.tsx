@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(response.user);
       setToken(response.token);
       
-      // Save to localStorage
+      // Save to localStorage for session persistence
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       
@@ -106,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(response.user);
       setToken(response.token);
       
-      // Save to localStorage
+      // Save to localStorage for session persistence
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       
@@ -164,4 +164,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

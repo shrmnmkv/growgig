@@ -29,6 +29,10 @@ const Navbar = () => {
     setIsMobileMenuOpen(false);
   };
 
+  // Determine what navigation links to show based on user role
+  const showFreelancerLinks = !user || user.role === 'freelancer';
+  const showEmployerLinks = !user || user.role === 'employer';
+
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
       {/* Top bar with contact info */}
@@ -65,12 +69,25 @@ const Navbar = () => {
             <Link to="/" className="text-gray-700 hover:text-growgig-600 font-medium">
               Home
             </Link>
-            <Link to="/jobs" className="text-gray-700 hover:text-growgig-600 font-medium">
-              Find Projects
-            </Link>
-            <Link to="/freelancers" className="text-gray-700 hover:text-growgig-600 font-medium">
-              Find Candidates
-            </Link>
+            
+            {showFreelancerLinks && (
+              <Link to="/jobs" className="text-gray-700 hover:text-growgig-600 font-medium">
+                Find Projects
+              </Link>
+            )}
+            
+            {showEmployerLinks && (
+              <Link to="/freelancers" className="text-gray-700 hover:text-growgig-600 font-medium">
+                Find Candidates
+              </Link>
+            )}
+            
+            {showFreelancerLinks && (
+              <Link to="/employers" className="text-gray-700 hover:text-growgig-600 font-medium">
+                Find Employers
+              </Link>
+            )}
+            
             {isAuthenticated && user?.role === 'employer' && (
               <Link to="/post-job" className="text-gray-700 hover:text-growgig-600 font-medium">
                 Post a Project
@@ -129,20 +146,37 @@ const Navbar = () => {
                 >
                   Home
                 </Link>
-                <Link
-                  to="/jobs"
-                  className="px-2 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Find Projects
-                </Link>
-                <Link
-                  to="/freelancers"
-                  className="px-2 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Find Candidates
-                </Link>
+                
+                {showFreelancerLinks && (
+                  <Link
+                    to="/jobs"
+                    className="px-2 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Find Projects
+                  </Link>
+                )}
+                
+                {showEmployerLinks && (
+                  <Link
+                    to="/freelancers"
+                    className="px-2 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Find Candidates
+                  </Link>
+                )}
+                
+                {showFreelancerLinks && (
+                  <Link
+                    to="/employers"
+                    className="px-2 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Find Employers
+                  </Link>
+                )}
+                
                 {isAuthenticated && user?.role === 'employer' && (
                   <Link
                     to="/post-job"

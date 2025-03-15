@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -17,6 +16,29 @@ import { formatDistanceToNow } from 'date-fns';
 import { api } from '@/services/api';
 import { Job } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
+
+const EscrowBadge = () => (
+  <div className="flex items-center bg-green-100 text-green-800 py-2 px-4 rounded-lg">
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width="20" 
+      height="20" 
+      viewBox="0 0 24 24" 
+      fill="none"
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className="mr-2"
+    >
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <path d="M2 10h20" />
+      <path d="M6 15h4" />
+      <path d="M14 15h4" />
+    </svg>
+    <span className="font-medium">Escrow Payment Protected</span>
+  </div>
+);
 
 const JobDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -159,11 +181,14 @@ const JobDetails = () => {
                     </div>
                   </div>
                   
-                  <Link to={`/apply/${job.id}`}>
-                    <Button className="bg-growgig-500 hover:bg-growgig-600">
-                      Apply Now
-                    </Button>
-                  </Link>
+                  <div className="flex flex-col gap-3">
+                    <EscrowBadge />
+                    <Link to={`/apply/${job.id}`}>
+                      <Button className="bg-growgig-500 hover:bg-growgig-600 w-full">
+                        Apply Now
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
               

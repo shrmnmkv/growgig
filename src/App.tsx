@@ -18,6 +18,9 @@ import Dashboard from "./pages/Dashboard";
 import FreelancerDashboard from "./pages/FreelancerDashboard";
 import EmployerDashboard from "./pages/EmployerDashboard";
 import PostJob from "./pages/PostJob";
+import EditProfile from "./pages/EditProfile";
+import CreateProfile from "./pages/CreateProfile";
+import EmployersListing from "./pages/EmployersListing";
 
 const queryClient = new QueryClient();
 
@@ -32,15 +35,18 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/jobs" element={<JobsListing />} />
             <Route path="/jobs/:id" element={<JobDetails />} />
-            <Route path="/jobs/:id/apply" element={<JobApplication />} />
+            <Route path="/apply/:id" element={<JobApplication />} />
             <Route path="/freelancers" element={<FreelancersListing />} />
             <Route path="/freelancers/:id" element={<FreelancerProfile />} />
+            <Route path="/employers" element={<EmployersListing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/freelancer-dashboard" element={<FreelancerDashboard />} />
             <Route path="/employer-dashboard" element={<EmployerDashboard />} />
             <Route path="/post-job" element={<PostJob />} />
+            <Route path="/edit-profile" element={<EditProfile />} />
+            <Route path="/create-profile" element={<CreateProfile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -51,4 +57,3 @@ const App = () => (
 );
 
 export default App;
-

@@ -510,10 +510,52 @@ export const api = {
   },
   
   // Jobs
-  getJobs: async (): Promise<Job[]> => {
+  getJobs: async (filters?: {
+    search?: string;
+    location?: string;
+    industry?: string;
+    businessType?: string;
+    jobType?: string;
+    role?: string;
+    minSalary?: number;
+    maxSalary?: number;
+    remote?: boolean;
+  }) => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
-    return [...mockJobs];
+    
+    let filteredJobs = [...mockJobs];
+    
+    if (filters) {
+      filteredJobs = filteredJobs.filter(job => {
+        // Search filter
+        if (filters.search && !job.title.toLowerCase().includes(filters.search.toLowerCase()) && 
+            !job.description.toLowerCase().includes(filters.search.toLowerCase())) {
+          return false;
+        }
+        
+        // Location filter
+        if (filters.location && !job.location.toLowerCase().includes(filters.location.toLowerCase())) {
+          return false;
+        }
+        
+        // Job type filter
+        if (filters.jobType && job.type !== filters.jobType) {
+          return false;
+        }
+        
+        // Remote filter
+        if (filters.remote && !job.description.toLowerCase().includes('remote')) {
+          return false;
+        }
+        
+        // We would have more filters here in a real app
+        
+        return true;
+      });
+    }
+    
+    return filteredJobs;
   },
   
   getJobById: async (id: string): Promise<Job | undefined> => {
@@ -684,5 +726,15 @@ export const api = {
         acceptedApplications: applications.filter(app => app.status === 'accepted').length,
       }
     };
+  },
+  
+  // Users
+  getUsers: async (): Promise<Omit<User, 'password'>[]> => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return mockUsers.map(user => {
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
   }
 };
