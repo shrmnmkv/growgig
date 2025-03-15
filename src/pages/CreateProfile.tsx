@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -73,7 +72,7 @@ const CreateProfile = () => {
         bio: data.bio,
         yearsOfExperience: data.yearsOfExperience,
         hourlyRate: data.hourlyRate,
-        skills: data.skills, // This is already transformed to an array by zod
+        skills: data.skills,
         portfolio: [],
         education: [],
         contact: {
@@ -86,8 +85,6 @@ const CreateProfile = () => {
       return api.createFreelancer(newFreelancer);
     },
     onSuccess: (createdProfile) => {
-      // Update user with the freelancerId
-      // In a real app, this would update user in DB too
       if (user) {
         user.freelancerId = createdProfile.id;
       }

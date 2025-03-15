@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -65,7 +64,6 @@ const EditProfile = () => {
     },
   });
   
-  // Update form when profile data is loaded
   React.useEffect(() => {
     if (profile) {
       form.reset({
@@ -101,7 +99,6 @@ const EditProfile = () => {
           phone: `+91 ${data.phone}`,
           linkedin: data.linkedin || '',
         },
-        // Keep existing data
         portfolio: profile?.portfolio || [],
         education: profile?.education || [],
         avatar: profile?.avatar || '',
