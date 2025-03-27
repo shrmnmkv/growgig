@@ -1,7 +1,7 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Link, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -22,22 +22,82 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Job, Application } from '@/types';
+import { useToast } from '@/components/ui/use-toast';
 
 const EmployerDashboard = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const employerId = user?._id;
   
-  if (!authLoading && (!isAuthenticated || user?.role !== 'employer')) {
+  // Initialize all hooks before any conditional returns
+  const { data: dashboardData, isLoading } = useQuery({
+    queryKey: ['employerDashboard', employerId],
+    queryFn: () => api.dashboard.getEmployerData(),
+    enabled: !!employerId && isAuthenticated && user?.role === 'employer',
+  });
+  
+  const updateStatusMutation = useMutation({
+    mutationFn: (params: { id: string, status: 'accepted' | 'rejected' }) => 
+      api.applications.updateStatus(params.id, params.status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employerDashboard'] });
+      toast({
+        title: 'Status Updated',
+        description: 'Application status has been updated successfully.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update application status.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteJobMutation = useMutation({
+    mutationFn: (jobId: string) => api.jobs.delete(jobId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employerDashboard'] });
+      toast({
+        title: 'Job Deleted',
+        description: 'Job posting has been deleted successfully.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete job posting.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleUpdateStatus = (applicationId: string, status: 'accepted' | 'rejected') => {
+    if (status === 'accepted') {
+      navigate(`/applications/${applicationId}?openMilestones=true`);
+    } else {
+      updateStatusMutation.mutate({ id: applicationId, status });
+    }
+  };
+
+  const handleDeleteJob = (jobId: string) => {
+    if (window.confirm('Are you sure you want to delete this job posting?')) {
+      deleteJobMutation.mutate(jobId);
+    }
+  };
+
+  // Now it's safe to do conditional returns after all hooks are called
+  if (!isAuthenticated && !authLoading) {
     return <Navigate to="/login" />;
   }
   
-  const employerId = user?.id;
-  
-  const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ['employerDashboard', employerId],
-    queryFn: () => employerId ? api.getEmployerDashboardData(employerId) : null,
-    enabled: !!employerId && isAuthenticated,
-  });
-  
+  if (user?.role !== 'employer' && !authLoading) {
+    return <Navigate to="/dashboard" />;
+  }
+
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -116,13 +176,13 @@ const EmployerDashboard = () => {
                   <CardDescription>Manage your active job listings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {dashboardData?.postedJobs && dashboardData.postedJobs.length > 0 ? (
+                  {dashboardData?.recentJobs && dashboardData.recentJobs.length > 0 ? (
                     <div className="space-y-4">
-                      {dashboardData.postedJobs.map((job: Job) => (
-                        <div key={job.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex justify-between items-start mb-2">
+                      {dashboardData.recentJobs.map((job: Job) => (
+                        <div key={job._id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="flex justify-between items-start">
                             <div>
-                              <Link to={`/jobs/${job.id}`} className="text-lg font-semibold text-gray-900 hover:text-growgig-600">
+                              <Link to={`/jobs/${job._id}`} className="text-lg font-semibold text-gray-900 hover:text-growgig-600">
                                 {job.title}
                               </Link>
                               <div className="flex flex-wrap gap-3 text-sm text-gray-500">
@@ -143,14 +203,32 @@ const EmployerDashboard = () => {
                             {job.description.substring(0, 150)}...
                           </div>
                           <div className="flex justify-between items-center">
-                            <Link 
-                              to={`/jobs/${job.id}`} 
-                              className="text-sm text-growgig-600 hover:text-growgig-700 inline-flex items-center"
-                            >
-                              View Details <ChevronRight size={16} className="ml-1" />
-                            </Link>
+                            <div className="flex gap-2">
+                              <Link 
+                                to={`/jobs/${job._id}`} 
+                                className="text-sm text-growgig-600 hover:text-growgig-700 inline-flex items-center"
+                              >
+                                View Details <ChevronRight size={16} className="ml-1" />
+                              </Link>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="text-growgig-600 border-growgig-600 hover:bg-growgig-50"
+                                onClick={() => navigate(`/edit-job/${job._id}`)}
+                              >
+                                Edit Job
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="text-red-600 border-red-600 hover:bg-red-50"
+                                onClick={() => handleDeleteJob(job._id)}
+                              >
+                                Delete Job
+                              </Button>
+                            </div>
                             <div className="text-sm text-gray-500">
-                              {dashboardData.applications.filter(app => app.jobId === job.id).length} applications
+                              {dashboardData.recentApplications.filter(app => (app.jobId as any)._id === job._id).length} applications
                             </div>
                           </div>
                         </div>
@@ -177,20 +255,20 @@ const EmployerDashboard = () => {
                   <CardDescription>Review and manage candidate applications</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {dashboardData?.applications && dashboardData.applications.length > 0 ? (
+                  {dashboardData?.recentApplications && dashboardData.recentApplications.length > 0 ? (
                     <div className="space-y-4">
-                      {dashboardData.applications.map((application: Application) => {
-                        const job = dashboardData.postedJobs.find(j => j.id === application.jobId);
+                      {dashboardData.recentApplications.map((application: Application) => {
+                        const job = dashboardData.recentJobs.find(j => j._id === application.jobId);
                         
                         return (
-                          <div key={application.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div key={application._id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-start mb-2">
                               <div>
-                                <Link to={`/applications/${application.id}`} className="text-lg font-semibold text-gray-900 hover:text-growgig-600">
-                                  Application for {job?.title || `Job #${application.jobId}`}
+                                <Link to={`/applications/${application._id}`} className="text-lg font-semibold text-gray-900 hover:text-growgig-600">
+                                  Application for {typeof application.jobId === 'object' && application.jobId !== null ? application.jobId.title : 'Untitled Job'}
                                 </Link>
                                 <div className="text-sm text-gray-500">
-                                  Freelancer ID: {application.freelancerId} • Applied {formatDistanceToNow(new Date(application.createdAt), { addSuffix: true })}
+                                  By {typeof application.freelancerId === 'object' && application.freelancerId !== null ? application.freelancerId.name : 'Unknown Freelancer'} • Applied {formatDistanceToNow(new Date(application.createdAt), { addSuffix: true })}
                                 </div>
                               </div>
                               <ApplicationStatusBadge status={application.status || 'pending'} />
@@ -200,18 +278,41 @@ const EmployerDashboard = () => {
                             </div>
                             <div className="flex justify-between items-center">
                               <Link 
-                                to={`/applications/${application.id}`} 
+                                to={`/applications/${application._id}`} 
                                 className="text-sm text-growgig-600 hover:text-growgig-700 inline-flex items-center"
                               >
                                 Review Application <ChevronRight size={16} className="ml-1" />
                               </Link>
                               <div className="flex space-x-2">
-                                <Button variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50">
-                                  Accept
-                                </Button>
-                                <Button variant="outline" size="sm" className="text-red-600 border-red-600 hover:bg-red-50">
-                                  Reject
-                                </Button>
+                                {application.status === 'pending' && (
+                                  <>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-green-600 border-green-600 hover:bg-green-50"
+                                      onClick={() => handleUpdateStatus(application._id, 'accepted')}
+                                    >
+                                      Accept
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-red-600 border-red-600 hover:bg-red-50"
+                                      onClick={() => handleUpdateStatus(application._id, 'rejected')}
+                                    >
+                                      Reject
+                                    </Button>
+                                  </>
+                                )}
+                                {application.status === 'accepted' && (
+                                  <Link
+                                    to={`/applications/${application._id}`}
+                                    className="text-green-600 hover:text-green-800 flex items-center"
+                                  >
+                                    Manage Milestones
+                                    <ChevronRight className="ml-1 h-4 w-4" />
+                                  </Link>
+                                )}
                               </div>
                             </div>
                           </div>

@@ -1,7 +1,7 @@
-
 // Job related types
 export interface Job {
-  id: string;
+  _id: string;
+  id?: string;
   title: string;
   company: string;
   location: string;
@@ -11,7 +11,9 @@ export interface Job {
   requirements: string[];
   benefits: string[];
   createdAt: string;
-  employerId: string;
+  updatedAt: string;
+  status: 'active' | 'pending' | 'completed' | 'cancelled';
+  employerId: string | { _id: string; companyName: string };
 }
 
 // Freelancer related types
@@ -34,7 +36,8 @@ export interface ContactInfo {
 }
 
 export interface Freelancer {
-  id: string;
+  _id: string;
+  userId: string;
   name: string;
   title: string;
   avatar: string;
@@ -46,29 +49,45 @@ export interface Freelancer {
   portfolio: PortfolioItem[];
   education: Education[];
   contact: ContactInfo;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Application related types
 export interface Application {
-  id: string;
-  jobId: string;
-  freelancerId: string;
-  resumeUrl: string;
+  _id: string;
+  jobId: {
+    _id: string;
+    title: string;
+    company: string;
+    location: string;
+    type: string;
+    salary: string;
+    description: string;
+  };
+  freelancerId: {
+    _id: string;
+    name: string;
+    email: string;
+  };
   coverLetter: string;
-  status?: 'pending' | 'accepted' | 'rejected';
+  resumeUrl: string;
+  status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
+  updatedAt: string;
 }
 
 // User related types
 export interface User {
-  id: string;
+  _id: string;
   email: string;
-  password: string; // This would not be returned from a real API
   name: string;
   role: 'freelancer' | 'employer';
-  companyName?: string; // For employers
-  freelancerId?: string; // For freelancers
+  companyName?: string;
+  freelancerId?: string;
+  skills: string[];
   createdAt: string;
+  updatedAt: string;
 }
 
 // Authentication types

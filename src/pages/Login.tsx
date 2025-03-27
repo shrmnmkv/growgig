@@ -1,9 +1,8 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,7 +14,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/use-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -27,8 +27,28 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
+  
+  // Log current authentication state on component mount
+  useEffect(() => {
+    console.log('Login page - Auth state:', { 
+      isAuthenticated, 
+      user: user ? { 
+        _id: user._id, 
+        name: user.name, 
+        role: user.role 
+      } : null,
+      isLoading
+    });
+    
+    if (isAuthenticated && user) {
+      console.log('User already authenticated, redirecting to dashboard');
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, user, navigate, isLoading]);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -39,9 +59,35 @@ const Login = () => {
   });
 
   const onSubmit = async (values: LoginFormValues) => {
-    const success = await login(values.email, values.password);
-    if (success) {
-      navigate('/dashboard');
+    try {
+      console.log('Attempting login with:', { email: values.email });
+      await login(values.email, values.password);
+      
+      // Add a delay to ensure the state is updated
+      setTimeout(() => {
+        console.log('Login successful, auth state after login:', { 
+          isAuthenticated, 
+          user: user ? { _id: user._id, name: user.name, role: user.role } : null 
+        });
+        
+        // Show a toast message for debugging
+        toast({
+          title: 'Login successful',
+          description: 'Redirecting to dashboard...',
+        });
+        
+        // Redirect to the page the user was trying to access, or dashboard
+        const from = (location.state as any)?.from?.pathname || '/dashboard';
+        console.log('Redirecting to:', from);
+        navigate(from, { replace: true });
+      }, 500);
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: 'Login failed',
+        description: 'Please check your credentials and try again.',
+        variant: 'destructive',
+      });
     }
   };
 

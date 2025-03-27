@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,7 @@ const Index = () => {
   useEffect(() => {
     const fetchStatistics = async () => {
       try {
-        const stats = await api.getStatistics();
+        const stats = await api.statistics.getAll();
         setStatistics(stats);
       } catch (error) {
         console.error('Failed to fetch statistics:', error);

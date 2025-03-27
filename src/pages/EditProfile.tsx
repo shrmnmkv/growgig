@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -23,6 +23,20 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { UploadCloud } from 'lucide-react';
 
+const experienceSchema = z.object({
+  title: z.string().min(2, 'Title must be at least 2 characters'),
+  company: z.string().min(2, 'Company name must be at least 2 characters'),
+  startDate: z.string().min(4, 'Start date is required'),
+  endDate: z.string().optional(),
+  description: z.string().min(10, 'Description must be at least 10 characters')
+});
+
+const educationSchema = z.object({
+  institution: z.string().min(2, 'Institution name must be at least 2 characters'),
+  degree: z.string().min(2, 'Degree must be at least 2 characters'),
+  year: z.string().min(4, 'Year is required')
+});
+
 const profileSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
   title: z.string().min(2, { message: 'Title must be at least 2 characters' }),
@@ -33,6 +47,8 @@ const profileSchema = z.object({
   skills: z.string().transform(val => val.split(',').map(skill => skill.trim())),
   phone: z.string().min(10, { message: 'Valid phone number is required' }),
   linkedin: z.string().optional(),
+  experience: z.array(experienceSchema),
+  education: z.array(educationSchema)
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -42,6 +58,8 @@ const EditProfile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [experiences, setExperiences] = useState<Array<z.infer<typeof experienceSchema>>>([]);
+  const [education, setEducation] = useState<Array<z.infer<typeof educationSchema>>>([]);
   
   const { data: profile, isLoading } = useQuery({
     queryKey: ['freelancerProfile', user?.freelancerId],
@@ -77,9 +95,51 @@ const EditProfile = () => {
         phone: profile.contact.phone.replace('+91 ', ''),
         linkedin: profile.contact.linkedin,
       });
+      setExperiences(profile.experience || []);
+      setEducation(profile.education || []);
     }
   }, [profile, form]);
   
+  const addExperience = () => {
+    setExperiences([
+      ...experiences,
+      { title: '', company: '', startDate: '', endDate: '', description: '' }
+    ]);
+  };
+
+  const removeExperience = (index: number) => {
+    setExperiences(experiences.filter((_, i) => i !== index));
+  };
+
+  const updateExperience = (index: number, field: keyof z.infer<typeof experienceSchema>, value: string) => {
+    const updatedExperiences = [...experiences];
+    updatedExperiences[index] = {
+      ...updatedExperiences[index],
+      [field]: value
+    };
+    setExperiences(updatedExperiences);
+  };
+
+  const addEducation = () => {
+    setEducation([
+      ...education,
+      { institution: '', degree: '', year: '' }
+    ]);
+  };
+
+  const removeEducation = (index: number) => {
+    setEducation(education.filter((_, i) => i !== index));
+  };
+
+  const updateEducation = (index: number, field: keyof z.infer<typeof educationSchema>, value: string) => {
+    const updatedEducation = [...education];
+    updatedEducation[index] = {
+      ...updatedEducation[index],
+      [field]: value
+    };
+    setEducation(updatedEducation);
+  };
+
   const updateProfileMutation = useMutation({
     mutationFn: (data: ProfileFormValues) => {
       if (!user?.freelancerId) {
@@ -100,7 +160,8 @@ const EditProfile = () => {
           linkedin: data.linkedin || '',
         },
         portfolio: profile?.portfolio || [],
-        education: profile?.education || [],
+        experience: experiences,
+        education: education,
         avatar: profile?.avatar || '',
       });
     },
@@ -335,6 +396,161 @@ const EditProfile = () => {
                         </label>
                       </div>
                     </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium">Experience</h3>
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        onClick={addExperience}
+                        className="text-growgig-600 border-growgig-600 hover:bg-growgig-50"
+                      >
+                        Add Experience
+                      </Button>
+                    </div>
+
+                    {experiences.map((exp, index) => (
+                      <Card key={index} className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormItem>
+                            <FormLabel>Title</FormLabel>
+                            <FormControl>
+                              <Input
+                                value={exp.title}
+                                onChange={(e) => updateExperience(index, 'title', e.target.value)}
+                                placeholder="e.g. Senior Developer"
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormLabel>Company</FormLabel>
+                            <FormControl>
+                              <Input
+                                value={exp.company}
+                                onChange={(e) => updateExperience(index, 'company', e.target.value)}
+                                placeholder="e.g. Tech Corp"
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormLabel>Start Date</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="month"
+                                value={exp.startDate}
+                                onChange={(e) => updateExperience(index, 'startDate', e.target.value)}
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormLabel>End Date</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="month"
+                                value={exp.endDate}
+                                onChange={(e) => updateExperience(index, 'endDate', e.target.value)}
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <div className="md:col-span-2">
+                            <FormItem>
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  value={exp.description}
+                                  onChange={(e) => updateExperience(index, 'description', e.target.value)}
+                                  placeholder="Describe your role and achievements"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          </div>
+
+                          <div className="md:col-span-2 flex justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => removeExperience(index)}
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium">Education</h3>
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        onClick={addEducation}
+                        className="text-growgig-600 border-growgig-600 hover:bg-growgig-50"
+                      >
+                        Add Education
+                      </Button>
+                    </div>
+
+                    {education.map((edu, index) => (
+                      <Card key={index} className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormItem>
+                            <FormLabel>Institution</FormLabel>
+                            <FormControl>
+                              <Input
+                                value={edu.institution}
+                                onChange={(e) => updateEducation(index, 'institution', e.target.value)}
+                                placeholder="e.g. University of Mumbai"
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormLabel>Degree</FormLabel>
+                            <FormControl>
+                              <Input
+                                value={edu.degree}
+                                onChange={(e) => updateEducation(index, 'degree', e.target.value)}
+                                placeholder="e.g. Bachelor of Technology"
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormLabel>Year</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="1900"
+                                max={new Date().getFullYear()}
+                                value={edu.year}
+                                onChange={(e) => updateEducation(index, 'year', e.target.value)}
+                                placeholder="e.g. 2023"
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <div className="md:col-span-2 flex justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => removeEducation(index)}
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
                   
                   <div className="flex justify-end space-x-4 pt-4">

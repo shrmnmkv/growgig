@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
 import Navbar from '@/components/Navbar';
@@ -67,7 +66,7 @@ const PostJob = () => {
   });
   
   const onSubmit = async (values: JobFormValues) => {
-    if (!user?.id) {
+    if (!user?._id) {
       toast({
         title: "Error",
         description: "You must be logged in to post a job",
@@ -98,17 +97,17 @@ const PostJob = () => {
         description: values.description,
         requirements,
         benefits,
-        employerId: user.id,
+        employerId: user._id,
       };
       
-      const job = await api.createJob(jobData);
+      const job = await api.jobs.create(jobData);
       
       toast({
         title: "Success!",
         description: "Your job has been posted successfully",
       });
       
-      navigate(`/jobs/${job.id}`);
+      navigate(`/jobs/${job._id}`);
     } catch (error) {
       console.error('Error posting job:', error);
       toast({

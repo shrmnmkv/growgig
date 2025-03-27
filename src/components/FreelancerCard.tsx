@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,8 +15,10 @@ interface FreelancerCardProps {
 }
 
 const FreelancerCard = ({ freelancer }: FreelancerCardProps) => {
+  console.log('Rendering FreelancerCard:', freelancer);
+  
   return (
-    <Link to={`/freelancers/${freelancer.id}`}>
+    <Link to={`/freelancers/${freelancer._id}`}>
       <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-growgig-200 cursor-pointer">
         <CardContent className="p-6">
           <div className="flex flex-col items-center text-center mb-4">
@@ -38,7 +39,7 @@ const FreelancerCard = ({ freelancer }: FreelancerCardProps) => {
             </div>
             <div className="flex items-center">
               <Clock size={16} className="mr-1 text-growgig-500" />
-              {freelancer.yearsOfExperience} years
+              {freelancer.yearsOfExperience === 0 ? 'No experience' : `${freelancer.yearsOfExperience} years`}
             </div>
             <div className="flex items-center">
               <Briefcase size={16} className="mr-1 text-growgig-500" />

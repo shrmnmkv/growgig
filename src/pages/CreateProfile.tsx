@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/services/api';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -22,17 +22,34 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { UploadCloud } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+
+const experienceSchema = z.object({
+  title: z.string().min(2, 'Title must be at least 2 characters'),
+  company: z.string().min(2, 'Company name must be at least 2 characters'),
+  startDate: z.string().min(4, 'Start date is required'),
+  endDate: z.string().optional(),
+  description: z.string().min(10, 'Description must be at least 10 characters')
+});
+
+const educationSchema = z.object({
+  institution: z.string().min(2, 'Institution name must be at least 2 characters'),
+  degree: z.string().min(2, 'Degree must be at least 2 characters'),
+  year: z.string().min(4, 'Year is required')
+});
 
 const profileSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  title: z.string().min(2, { message: 'Title must be at least 2 characters' }),
-  location: z.string().min(2, { message: 'Location is required' }),
-  bio: z.string().min(10, { message: 'Bio must be at least 10 characters' }),
-  yearsOfExperience: z.coerce.number().min(0),
-  hourlyRate: z.coerce.number().min(100, { message: 'Hourly rate must be at least ₹100' }),
-  skills: z.string().transform(val => val.split(',').map(skill => skill.trim())),
-  phone: z.string().min(10, { message: 'Valid phone number is required' }),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  title: z.string().min(2, 'Title must be at least 2 characters'),
+  location: z.string().min(2, 'Location must be at least 2 characters'),
+  bio: z.string().min(10, 'Bio must be at least 10 characters'),
+  yearsOfExperience: z.number().min(0).max(50),
+  hourlyRate: z.number().min(500).max(10000),
+  skills: z.string(),
+  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
   linkedin: z.string().optional(),
+  experience: z.array(experienceSchema),
+  education: z.array(educationSchema)
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -42,6 +59,10 @@ const CreateProfile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [experiences, setExperiences] = useState<Array<z.infer<typeof experienceSchema>>>([]);
+  const [education, setEducation] = useState<Array<z.infer<typeof educationSchema>>>([]);
   
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -55,26 +76,121 @@ const CreateProfile = () => {
       skills: '',
       phone: '',
       linkedin: '',
+      experience: [],
+      education: []
     },
   });
   
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "File too large",
+          description: "Please select an image under 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      toast({
+        title: "Profile Picture Selected",
+        description: "Your profile picture has been selected successfully.",
+      });
+    }
+  };
+  
+  const addExperience = () => {
+    setExperiences([
+      ...experiences,
+      { title: '', company: '', startDate: '', endDate: '', description: '' }
+    ]);
+  };
+
+  const removeExperience = (index: number) => {
+    setExperiences(experiences.filter((_, i) => i !== index));
+  };
+
+  const updateExperience = (index: number, field: keyof z.infer<typeof experienceSchema>, value: string) => {
+    const updatedExperiences = [...experiences];
+    updatedExperiences[index] = {
+      ...updatedExperiences[index],
+      [field]: value
+    };
+    setExperiences(updatedExperiences);
+  };
+
+  const addEducation = () => {
+    setEducation([
+      ...education,
+      { institution: '', degree: '', year: '' }
+    ]);
+  };
+
+  const removeEducation = (index: number) => {
+    setEducation(education.filter((_, i) => i !== index));
+  };
+
+  const updateEducation = (index: number, field: keyof z.infer<typeof educationSchema>, value: string) => {
+    const updatedEducation = [...education];
+    updatedEducation[index] = {
+      ...updatedEducation[index],
+      [field]: value
+    };
+    setEducation(updatedEducation);
+  };
+
   const createProfileMutation = useMutation({
-    mutationFn: (data: ProfileFormValues) => {
-      if (!user?.id) {
+    mutationFn: async (data: ProfileFormValues) => {
+      if (!user?._id) {
         throw new Error('User ID not found');
+      }
+
+      let avatarUrl = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(data.name);
+      
+      if (avatarFile) {
+        try {
+          const uploadResult = await api.upload.avatar(avatarFile);
+          avatarUrl = uploadResult.url;
+        } catch (error) {
+          console.error('Avatar upload failed:', error);
+          toast({
+            title: "Avatar Upload Failed",
+            description: "Using default avatar instead. You can update your profile picture later.",
+            variant: "destructive",
+          });
+        }
       }
       
       const newFreelancer = {
         name: data.name,
         title: data.title,
-        avatar: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 99)}.jpg`,
+        avatar: avatarUrl,
         location: data.location,
         bio: data.bio,
         yearsOfExperience: data.yearsOfExperience,
         hourlyRate: data.hourlyRate,
-        skills: data.skills,
+        skills: data.skills.split(',').map(skill => skill.trim()),
+        experience: experiences,
+        education: education,
         portfolio: [],
-        education: [],
         contact: {
           email: user.email,
           phone: `+91 ${data.phone}`,
@@ -86,7 +202,7 @@ const CreateProfile = () => {
     },
     onSuccess: (createdProfile) => {
       if (user) {
-        user.freelancerId = createdProfile.id;
+        user.freelancerId = createdProfile._id;
       }
       
       toast({
@@ -132,6 +248,43 @@ const CreateProfile = () => {
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <div className="mb-6">
+                    <Label className="block mb-2">Profile Picture</Label>
+                    <div className="flex items-center gap-4">
+                      <div className="relative h-24 w-24">
+                        {avatarPreview ? (
+                          <img
+                            src={avatarPreview}
+                            alt="Profile preview"
+                            className="h-24 w-24 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-24 w-24 rounded-full bg-gray-100 flex items-center justify-center">
+                            <UploadCloud className="h-8 w-8 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <input
+                          type="file"
+                          id="avatar-upload"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={handleAvatarChange}
+                        />
+                        <label
+                          htmlFor="avatar-upload"
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-growgig-500 hover:bg-growgig-600 cursor-pointer"
+                        >
+                          Choose Photo
+                        </label>
+                        <p className="mt-1 text-sm text-gray-500">
+                          JPG, PNG or GIF (max. 5MB)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -197,7 +350,7 @@ const CreateProfile = () => {
                           <FormItem>
                             <FormLabel>Hourly Rate (₹)</FormLabel>
                             <FormControl>
-                              <Input type="number" min="100" {...field} />
+                              <Input type="number" min="500" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -240,6 +393,162 @@ const CreateProfile = () => {
                       </FormItem>
                     )}
                   />
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium">Work Experience</h3>
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        onClick={addExperience}
+                        className="text-growgig-600 border-growgig-600 hover:bg-growgig-50"
+                      >
+                        Add Experience
+                      </Button>
+                    </div>
+
+                    {experiences.map((exp, index) => (
+                      <Card key={index} className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormItem>
+                            <FormLabel>Job Title</FormLabel>
+                            <FormControl>
+                              <Input
+                                value={exp.title}
+                                onChange={(e) => updateExperience(index, 'title', e.target.value)}
+                                placeholder="e.g. Senior Developer"
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormLabel>Company</FormLabel>
+                            <FormControl>
+                              <Input
+                                value={exp.company}
+                                onChange={(e) => updateExperience(index, 'company', e.target.value)}
+                                placeholder="e.g. Tech Solutions"
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormLabel>Start Date</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="month"
+                                value={exp.startDate}
+                                onChange={(e) => updateExperience(index, 'startDate', e.target.value)}
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormLabel>End Date</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="month"
+                                value={exp.endDate}
+                                onChange={(e) => updateExperience(index, 'endDate', e.target.value)}
+                                placeholder="Present"
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <div className="md:col-span-2">
+                            <FormItem>
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  value={exp.description}
+                                  onChange={(e) => updateExperience(index, 'description', e.target.value)}
+                                  placeholder="Describe your responsibilities and achievements..."
+                                />
+                              </FormControl>
+                            </FormItem>
+                          </div>
+
+                          <div className="md:col-span-2 flex justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => removeExperience(index)}
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium">Education</h3>
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        onClick={addEducation}
+                        className="text-growgig-600 border-growgig-600 hover:bg-growgig-50"
+                      >
+                        Add Education
+                      </Button>
+                    </div>
+
+                    {education.map((edu, index) => (
+                      <Card key={index} className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormItem>
+                            <FormLabel>Institution</FormLabel>
+                            <FormControl>
+                              <Input
+                                value={edu.institution}
+                                onChange={(e) => updateEducation(index, 'institution', e.target.value)}
+                                placeholder="e.g. University of Mumbai"
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormLabel>Degree</FormLabel>
+                            <FormControl>
+                              <Input
+                                value={edu.degree}
+                                onChange={(e) => updateEducation(index, 'degree', e.target.value)}
+                                placeholder="e.g. Bachelor of Technology"
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormLabel>Year</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="1900"
+                                max={new Date().getFullYear()}
+                                value={edu.year}
+                                onChange={(e) => updateEducation(index, 'year', e.target.value)}
+                                placeholder="e.g. 2023"
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          <div className="md:col-span-2 flex justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => removeEducation(index)}
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField

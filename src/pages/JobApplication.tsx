@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/services/api';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -32,7 +32,7 @@ const applicationSchema = z.object({
   coverLetter: z.string().min(50, {
     message: 'Your cover letter should be at least 50 characters long',
   }),
-  resumeUrl: z.string().default('resume_placeholder.pdf'),
+  resumeUrl: z.string().min(1, { message: 'Please upload your resume' }),
 });
 
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
@@ -43,29 +43,29 @@ const JobApplication = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const { data: job, isLoading: isLoadingJob } = useQuery({
     queryKey: ['job', id],
-    queryFn: () => api.getJobById(id || ''),
+    queryFn: () => api.jobs.getOne(id || ''),
   });
 
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
       coverLetter: '',
-      resumeUrl: 'resume_placeholder.pdf',
     },
   });
 
   const applyMutation = useMutation({
     mutationFn: (applicationData: ApplicationFormValues) => {
-      if (!user?.id || !user.freelancerId || !id) {
+      if (!user?._id || !id) {
         throw new Error('Missing required data for job application');
       }
       
-      return api.createApplication({
+      return api.applications.create({
         jobId: id,
-        freelancerId: user.freelancerId,
+        freelancerId: user._id,
         resumeUrl: applicationData.resumeUrl,
         coverLetter: applicationData.coverLetter,
       });
@@ -88,6 +88,15 @@ const JobApplication = () => {
   });
 
   const onSubmit = (values: ApplicationFormValues) => {
+    if (!selectedFile) {
+      toast({
+        title: 'Resume Required',
+        description: 'Please upload your resume before submitting.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     applyMutation.mutate(values);
   };
@@ -95,6 +104,23 @@ const JobApplication = () => {
   const handleCancel = () => {
     navigate(`/jobs/${id}`);
   };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      // Create a temporary URL for the file
+      const fileUrl = URL.createObjectURL(file);
+      form.setValue('resumeUrl', fileUrl);
+    }
+  };
+
+  // Cleanup URL on unmount
+  useEffect(() => {
+    return () => {
+      form.getValues('resumeUrl') && URL.revokeObjectURL(form.getValues('resumeUrl'));
+    };
+  }, []);
 
   if (isLoadingJob) {
     return (
@@ -164,31 +190,39 @@ const JobApplication = () => {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="space-y-4">
-                    <div className="p-4 bg-gray-100 rounded-lg">
-                      <h3 className="font-medium mb-2">Resume</h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        We'll use your profile resume for this application. In a real app, you would be able
-                        to upload a different resume if desired.
-                      </p>
-                      <div className="p-3 border border-gray-300 rounded bg-white flex items-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="mr-2 text-gray-500"
-                        >
-                          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                          <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                        <span className="text-sm">Your profile resume</span>
-                      </div>
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="resumeUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Resume</FormLabel>
+                          <FormControl>
+                            <div className="p-4 bg-gray-100 rounded-lg">
+                              <input
+                                type="file"
+                                accept=".pdf,.doc,.docx"
+                                onChange={handleFileChange}
+                                className="block w-full text-sm text-gray-500
+                                  file:mr-4 file:py-2 file:px-4
+                                  file:rounded-full file:border-0
+                                  file:text-sm file:font-semibold
+                                  file:bg-growgig-50 file:text-growgig-700
+                                  hover:file:bg-growgig-100"
+                              />
+                              {selectedFile && (
+                                <p className="mt-2 text-sm text-green-600">
+                                  Selected file: {selectedFile.name}
+                                </p>
+                              )}
+                              <p className="mt-2 text-sm text-gray-500">
+                                Upload your resume (PDF, DOC, or DOCX)
+                              </p>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={form.control}

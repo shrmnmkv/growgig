@@ -1,166 +1,124 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, AuthResponse } from '@/types';
+import React, { createContext, useState, useEffect } from 'react';
 import { api } from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
 
-interface AuthContextType {
-  user: Omit<User, 'password'> | null;
-  token: string | null;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (userData: {
-    email: string;
-    password: string;
-    name: string;
-    role: 'freelancer' | 'employer';
-    companyName?: string;
-  }) => Promise<boolean>;
-  logout: () => void;
-  isAuthenticated: boolean;
+interface User {
+  _id: string;
+  email: string;
+  role: 'employer' | 'freelancer';
+  name: string;
+  freelancerId?: string;
+  companyName?: string;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  updateUser: (userData: Partial<User>) => Promise<void>;
+  register: (userData: { email: string; password: string; name: string; role: 'employer' | 'freelancer' }) => Promise<void>;
+}
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Check for existing token in localStorage on initial load
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      // Set token in API service
+      api.setAuthToken(token);
+      
+      // Fetch user profile
+      api.auth.getProfile()
+        .then(data => {
+          console.log('User profile loaded:', data);
+          setUser(data.user);
+        })
+        .catch((err) => {
+          console.error('Error loading profile:', err);
+          sessionStorage.removeItem('token');
+          api.setAuthToken(null);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
     }
-
-    setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
+  const login = async (email: string, password: string) => {
     try {
-      const response = await api.login(email, password);
+      console.log('AuthContext: Starting login process');
+      setError(null);
+      const data = await api.auth.login(email, password);
+      console.log('AuthContext: Login successful, setting user and token');
       
-      if (!response) {
-        toast({
-          title: 'Login failed',
-          description: 'Invalid email or password. Please try again.',
-          variant: 'destructive',
-        });
-        return false;
-      }
+      // Set token using the API service (which handles sessionStorage)
+      api.setAuthToken(data.token);
       
-      // Store user data and token
-      setUser(response.user);
-      setToken(response.token);
-      
-      // Save to localStorage for session persistence
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      
+      setUser(data.user);
       toast({
         title: 'Login successful',
-        description: `Welcome back, ${response.user.name}!`,
+        description: `Welcome back, ${data.user.name}!`,
       });
-      
-      return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      toast({
-        title: 'Login failed',
-        description: 'An error occurred during login. Please try again.',
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const register = async (userData: {
-    email: string;
-    password: string;
-    name: string;
-    role: 'freelancer' | 'employer';
-    companyName?: string;
-  }): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const response = await api.register(userData);
-      
-      if (!response) {
-        toast({
-          title: 'Registration failed',
-          description: 'This email may already be registered. Please try another email.',
-          variant: 'destructive',
-        });
-        return false;
-      }
-      
-      // Store user data and token
-      setUser(response.user);
-      setToken(response.token);
-      
-      // Save to localStorage for session persistence
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      
-      toast({
-        title: 'Registration successful',
-        description: `Welcome to GrowGig, ${response.user.name}!`,
-      });
-      
-      return true;
-    } catch (error) {
-      console.error('Registration error:', error);
-      toast({
-        title: 'Registration failed',
-        description: 'An error occurred during registration. Please try again.',
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      console.error('AuthContext: Login error:', err);
+      setError('Invalid email or password');
+      throw err;
     }
   };
 
   const logout = () => {
+    // Clear token using API service
+    api.setAuthToken(null);
     setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
     toast({
       title: 'Logged out successfully',
       description: 'You have been logged out of your account.',
     });
   };
 
+  const updateUser = async (userData: Partial<User>) => {
+    try {
+      setError(null);
+      const data = await api.auth.updateProfile(userData);
+      setUser(data.user);
+    } catch (err) {
+      setError('Failed to update profile');
+      throw err;
+    }
+  };
+
+  const register = async (userData: { email: string; password: string; name: string; role: 'employer' | 'freelancer' }) => {
+    try {
+      setError(null);
+      const data = await api.auth.register(userData);
+      
+      // Set token using the API service
+      api.setAuthToken(data.token);
+      
+      setUser(data.user);
+      toast({
+        title: 'Registration successful',
+        description: `Welcome, ${data.user.name}!`,
+      });
+    } catch (err) {
+      setError('Failed to register');
+      throw err;
+    }
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isLoading,
-        login,
-        register,
-        logout,
-        isAuthenticated: !!user && !!token,
-      }}
-    >
+    <AuthContext.Provider value={{ user, loading, error, login, logout, updateUser, register }}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+}

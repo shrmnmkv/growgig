@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,12 +16,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Menu, Phone, Globe, User } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { AuthContext } from '@/contexts/AuthContext';
 import ButtonLink from './ButtonLink';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, isAuthenticated, logout } = useAuth();
+  const auth = useContext(AuthContext);
+  
+  if (!auth) {
+    throw new Error('AuthContext not found');
+  }
+  
+  const { user, logout } = auth;
+  const isAuthenticated = !!user;
 
   const handleLogout = () => {
     logout();

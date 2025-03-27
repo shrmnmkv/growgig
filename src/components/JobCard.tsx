@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,7 +17,7 @@ interface JobCardProps {
 
 const JobCard = ({ job }: JobCardProps) => {
   return (
-    <Link to={`/jobs/${job.id}`}>
+    <Link to={`/jobs/${job._id}`}>
       <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-growgig-200 cursor-pointer">
         <CardContent className="p-6">
           <div className="flex justify-between items-start mb-3">

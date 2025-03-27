@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -218,27 +217,19 @@ const FreelancerProfile = () => {
                   </div>
                   
                   <div className="pl-4 border-l-2 border-growgig-200 space-y-6">
-                    <div>
-                      <h4 className="font-medium text-lg">Senior Developer</h4>
-                      <p className="text-gray-600">Tech Solutions India • 2018 - Present</p>
-                      <p className="mt-2 text-gray-700">
-                        Led development of enterprise applications for major clients across finance and healthcare sectors.
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-lg">Full Stack Developer</h4>
-                      <p className="text-gray-600">Digital Innovations • 2015 - 2018</p>
-                      <p className="mt-2 text-gray-700">
-                        Developed responsive web applications using React and Node.js.
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-lg">Junior Developer</h4>
-                      <p className="text-gray-600">StartUp Hub Bangalore • 2012 - 2015</p>
-                      <p className="mt-2 text-gray-700">
-                        Worked on front-end development for various startup clients.
-                      </p>
-                    </div>
+                    {freelancer.experience && freelancer.experience.length > 0 ? (
+                      freelancer.experience.map((exp, index) => (
+                        <div key={index}>
+                          <h4 className="font-medium text-lg">{exp.title}</h4>
+                          <p className="text-gray-600">{exp.company} • {exp.startDate} - {exp.endDate || 'Present'}</p>
+                          <p className="mt-2 text-gray-700">{exp.description}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-gray-600">
+                        No experience information available
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Freelancer } from '@/types';
@@ -50,16 +49,21 @@ const FreelancersListing = () => {
   
   const { data: freelancersResponse, isLoading, error } = useQuery<FreelancersPaginatedResponse>({
     queryKey: ['freelancers', searchQuery, location, selectedSkills, experienceRange, rateRange, currentPage],
-    queryFn: () => api.getFreelancers({
-      search: searchQuery,
-      location,
-      skills: selectedSkills,
-      minExperience: experienceRange[0],
-      maxExperience: experienceRange[1],
-      minRate: rateRange[0],
-      maxRate: rateRange[1],
-      page: currentPage
-    })
+    queryFn: async () => {
+      const response = await api.getFreelancers({
+        search: searchQuery,
+        location,
+        skills: selectedSkills,
+        minExperience: experienceRange[0],
+        maxExperience: experienceRange[1],
+        minRate: rateRange[0],
+        maxRate: rateRange[1],
+        page: currentPage
+      });
+      console.log('API Response:', response);
+      return response;
+    },
+    enabled: true // Always fetch on component mount
   });
   
   const totalPages = freelancersResponse?.totalPages || 1;
@@ -265,7 +269,7 @@ const FreelancersListing = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
                   {freelancersResponse.data.map((freelancer: Freelancer) => (
-                    <FreelancerCard key={freelancer.id} freelancer={freelancer} />
+                    <FreelancerCard key={freelancer._id} freelancer={freelancer} />
                   ))}
                 </div>
                 
